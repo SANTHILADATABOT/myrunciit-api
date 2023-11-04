@@ -282,9 +282,11 @@ function update_calc_cart() {
   //  }
   var grand = $("#grand");
   var appendes1 = $(".box_shadow");
-
+  var code = $('.coupon_code').val();
+  var commonData = { code: code };  
   $.ajax({
     url: url,
+    data: commonData,
     beforeSend: function () {
       total.html("...");
       ship.html("...");
@@ -293,11 +295,44 @@ function update_calc_cart() {
     },
     success: function (data) {
       var res = data.split("-");
+      var lastPart = res[res.length - 1];
+    //   console.log('sgsgs'+lastPart+'rewer');
+      if(lastPart){
+        console.log('LPart--',lastPart);
+        var currency = 'RM' + lastPart;
+        $('#totalDiscountValue').text(currency);
+        $('#total_dis').val(currency);
+        }else{
+          var noVal = 'RM0.00';
+          $('#total_dis').val(noVal);
+        }
       //alert(res);
       total.html(res[0]).fadeIn();
       ship.html(res[1]).fadeIn();
       tax.html(res[2]).fadeIn();
-      grand.html(res[3]).fadeIn();
+      {
+        var d1=[];
+        if($("#lalamove_res").val()!='')
+        {
+            d1=JSON.parse($("#lalamove_res").val());
+        }
+        var total1=parseFloat(total.html().toUpperCase().replace('RM', ''));
+        var total_1=(!isNaN(total1))?total1:0.0;
+        var tax1=parseFloat(tax.html().toUpperCase().replace('RM', ''));
+        var tax_1=(!isNaN(tax1))?tax1:0.0;
+        var disco1=parseFloat($("#total_dis").val().toUpperCase().replace('RM', ''));
+        var disco_1=(!isNaN(disco1))?disco1:0.0;
+        var delivery_1=0;
+        for(let i=0; i<d1.length; i++){
+            var d1_1=JSON.parse(d1[i]);
+            if(!isNaN(d1_1['data']['priceBreakdown']['total']))
+            {delivery_1+=parseFloat(d1_1['data']['priceBreakdown']['total']);}
+        }
+        var grand_1=(total_1+tax_1-disco_1+delivery_1);
+        grand.html("RM"+(grand_1.toFixed(2))).fadeIn();
+                
+      }
+    //   grand.html(res[3]).fadeIn();
       if (res[5] == 1) {
         if (parseFloat(res[0]) > 0 && parseFloat(res[0]) < parseFloat(res[6])) {
           $("#minim,#remove3").remove();
@@ -331,10 +366,12 @@ $('body').on('click', '.coupon_btn', function () {
   $('#coup_frm').val(code);
   var form = $('#coupon_set');
   var subTotal = $('#total').text().split('RM')[1];
+  var venID =  $('#venId').val();
   // console.log('total', subTotal);
   $.post(base_url + 'index.php/home/checkCouponIsValid', {
     code,
-    subTotal
+    subTotal,
+    currstoreid: venID
   }, function (data) {
     console.log('data', data);
     if (data == 1) {
@@ -391,9 +428,18 @@ $('body').on('click', '.coupon_btn', function () {
           }
         }
       });
-    } else {
+    } else if(data == 0){
+      notify('Coupon Not Valid!!', 'warning', 'bottom', 'right');
+    }
+    else if(data == 2){
+      notify('Must be more then minimum order amount!!', 'warning', 'bottom', 'right');
+    }
+    else if(data == 3){
+      notify('Different Store Coupon!!', 'warning', 'bottom', 'right');
+    }
+    else {
       // not allowed to apply coupon
-      notify('Must be more then minimum order amount', 'warning', 'bottom', 'right');
+      notify('Error', 'warning', 'bottom', 'right');
     }
   });
 

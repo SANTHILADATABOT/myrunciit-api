@@ -2569,6 +2569,30 @@ function postal_codes()
         }
     }
 
+    //Below functions are newly added on 04-11-2023
+	//Compare product for Webservices
+	
+    function add_compare_ws($product_id)
+    {
+        if ($this->session->userdata('compare') == '' || $this->session->userdata('compare') == 'null') {
+            $this->session->set_userdata('compare', '[]');
+        }
+        $compared = json_decode($this->session->userdata('compare'), true);
+        if ($this->is_compared($product_id) == 'no') {
+            array_push($compared, $product_id);
+            $compared = json_encode($compared);
+            //echo $this->compare_category_num($product_id);
+            if ($this->compare_category_num($product_id) <= 3) {
+                $this->session->set_userdata('compare', $compared);
+                return 'done';
+            } else {
+                return 'cat_full';
+            }
+        } else {
+            return 'already';
+        }
+    }
+
     function compare_category_num($product_id)
     {
         if ($this->session->userdata('compare') == '' || $this->session->userdata('compare') == 'null') {
@@ -3742,4 +3766,7 @@ function postal_codes()
         $return .= '</select>';
         return $return;
     }
+
+
+
 }

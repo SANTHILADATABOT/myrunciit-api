@@ -356,27 +356,80 @@ jQuery(document).ready(function () {
 			});
         }
 		
+		// if (featuredProductsCarousel6.length) {
+		// 	featuredProductsCarousel6.owlCarousel({
+		// 		autoplay: true,
+		// 		autoplayHoverPause: true,
+		// 		loop:true,
+		// 		margin: 5,
+		// 		dots: false,
+		// 		nav: true,
+		// 		navText: [
+		// 			"<i class='fa fa-angle-left'></i>",
+		// 			"<i class='fa fa-angle-right'></i>"
+		// 		],
+		// 		responsive: {
+		// 			0: {items: 2},
+		// 			479: {items: 2},
+		// 			768: {items: 2},
+		// 			991: {items: 4},
+		// 			1024: {items: 5}
+		// 		}
+		// 	});
+        // }
 		if (featuredProductsCarousel6.length) {
-			featuredProductsCarousel6.owlCarousel({
-				autoplay: true,
-				autoplayHoverPause: true,
-				loop:true,
-				margin: 5,
-				dots: false,
-				nav: true,
-				navText: [
-					"<i class='fa fa-angle-left'></i>",
-					"<i class='fa fa-angle-right'></i>"
-				],
-				responsive: {
-					0: {items: 2},
-					479: {items: 2},
-					768: {items: 2},
-					991: {items: 4},
-					1024: {items: 5}
-				}
-			});
-        }
+
+			var numProducts = $('#num').val();
+			// console.log('np--',numProducts);
+		
+			// Set the loop option based on the number of products
+			var loopEnabled = numProducts > 5;
+
+			// console.log('loop--',loopEnabled);
+		
+			if(loopEnabled == true){
+				featuredProductsCarousel6.owlCarousel({
+					autoplay: true,
+					autoplayHoverPause: true,
+					loop: true,
+					margin: 5,
+					dots: false,
+					nav: true,
+					navText: [
+						"<i class='fa fa-angle-left'></i>",
+						"<i class='fa fa-angle-right'></i>"
+					],
+					responsive: {
+						0: { items: 2 },
+						479: { items: 2 },
+						768: { items: 2 },
+						991: { items: 4 },
+						1024: { items: 5 }
+					}
+				});
+			} else {
+				featuredProductsCarousel6.owlCarousel({
+					autoplay: true,
+					autoplayHoverPause: true,
+					loop: false,
+					margin: 5,
+					dots: false,
+					nav: true,
+					navText: [
+						"<i class='fa fa-angle-left'></i>",
+						"<i class='fa fa-angle-right'></i>"
+					],
+					responsive: {
+						0: { items: 2 },
+						479: { items: 2 },
+						768: { items: 2 },
+						991: { items: 4 },
+						1024: { items: 5 }
+					}
+				});
+			}
+		}
+
 		if (featuredProductsCarousel7.length) {
 			featuredProductsCarousel7.owlCarousel({
 				autoplay: false,
