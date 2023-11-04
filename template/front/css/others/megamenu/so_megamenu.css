@@ -534,7 +534,20 @@ ul.megamenu li .sub-menu .content .hover-menu .menu ul ul li {
 }
 
 .fa-angle-right {
-    margin-right:0px;
+    position: absolute;
+    top: 50%;
+    margin: -20px 0 0 0;
+    right: -15px;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 30px;
+    line-height: 36px;
+    border: solid 0px #a5abb7;
+    background: transparent;
+    color: #a5abb7;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
 }
 .megamenu i {
     padding-right: 12px;
