@@ -1586,21 +1586,31 @@ class Webservice extends CI_Controller
 
 	function add_review()
 	{
+		try{
+			
 		$datas = json_decode($this->input->raw_input_stream, 1);
+		
 		if (isset($datas['pid']) && $datas['pid'] != '' && isset($datas['user_id']) && $datas['user_id'] != '') {
+			
+			$total_review_count = $this->db->get_where('review_product', array('product_id' => $datas['pid'], 'user_id'=>$datas['user_id'],'order_id'=>$datas['order_id'], 'sale_id'=>$datas['sale_id']))->num_rows();
+			if($total_review_count>0){
+				echo json_encode(['status'=> 'FAILED', 'message'=>"You already submitted the review for this order", 'response'=> null]);
+				exit();
+			}
 
-			$data['product_id'] 				= $datas['pid'];
-			$data['user_id'] 			= $datas['user_id'];
+			$data['product_id'] 	= $datas['pid'];
+			$data['user_id'] 		= $datas['user_id'];
 			$data['title'] 			= $datas['title'];
-			$data['rating'] 			= $datas['rating'];
-			$data['description'] 			= $datas['description'];
-			$data['order_id'] 			= $datas['order_id'];
-			$data['sale_id'] 			= $datas['sale_id'];
-			$data['status'] = 0;
+			$data['rating'] 		= $datas['rating'];
+			$data['description'] 	= $datas['description'];
+			$data['order_id'] 		= $datas['order_id'];
+			$data['sale_id'] 		= $datas['sale_id'];
+			$data['status'] 		= 0;
 			//	$data['time_format'] 		= time();
 
+
 			$this->db->insert('review_product', $data);
-			$this->email_model->user_review_mail($data['user_id'], $data['rating'], $data['description'], $data['product_id'], $data['order_id']);
+			// $this->email_model->user_review_mail($data['user_id'], $data['rating'], $data['description'], $data['product_id'], $data['order_id']);
 			//echo $this->db->last_query();
 			$product_reviews = $this->db->insert_id();
 			$datasr['review'] = 1;
@@ -1610,14 +1620,20 @@ class Webservice extends CI_Controller
 
 
 			$results['status'] = 'Success';
-			$results['Response'] = 'Your Review Send Successfully';
+			$results['message'] = 'Review Submitted Successfully';
+			$results['Response'] = 'Review Submitted Successfully';
 			echo json_encode($results, true);
 			exit;
 		} else {
 			$results['status'] = 'FAILED';
+			$results['message'] = 'Failed to Submit your Review';
 			$results['Response'] = 'Parameter Missing';
 			echo json_encode($results, true);
+			exit();
 		}
+	}catch(Exception $e){
+		echo json_encode(['status'=> 'FAILED', 'message'=>$e->getMessage(), 'response'=> $e]);
+	}
 	}
 
 	function viewReviewByProductId($para1 = '')
@@ -1644,6 +1660,16 @@ class Webservice extends CI_Controller
 		}
 	}
 
+	function getProductReviews(){
+		try{
+		$reviews=$this->db->get_where('review_product',array('product_id'=>$this->input->post('product_id'), 'status'=> 1))->result_array();
+		echo json_encode(['status'=>'SUCCESS', 'message'=>'SUCCESS','response'=>$reviews]);
+	}
+	catch(Exception $e){
+			echo json_encode(['status'=>'FAILED', 'message'=>$e->getMessage(),'response'=>$reviews]);
+		}
+		
+	}
 	function defaul_store($para1 = '')
 	{
 
