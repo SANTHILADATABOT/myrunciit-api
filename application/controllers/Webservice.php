@@ -10746,8 +10746,7 @@ class Webservice extends CI_Controller
 	function getPickupDetailAsVendor($para1 = '')
 	{
 		try {
-
-			$vendorId = $para1;
+			$vendorId = $this->input->post('vendorId');
 			$pickupDetail = $this->db->get_where('pickup_slot', ['vendor_id' => $vendorId])->result_array();
 			// print_r('intervel '. $pickupDetail[0]['interval_in_minute'] );
 			// exit;
@@ -10762,10 +10761,56 @@ class Webservice extends CI_Controller
 		} catch (Exception $e) {
 			echo '' . $e->getMessage();
 		}
-		$value = array("status" => "SUCCESS", "Message" => "SUCCESS", "Response" => $response);
+		$value = array("status" => "SUCCESS", "message" => "SUCCESS", "response" => $response);
 
 		exit(json_encode($value));
 	}
+	function getPickupLocation(){
+		try{
+		$vendorid = $this->session->userdata('vendorid');
+		if($vendorid=="")
+		{
+			$vendorid="2";
+		}
+		$store_address =  $this->db->get_where('vendor', array('status' => 'approved', 'pickup' => 'yes','vendor_id'=>$vendorid))->result_array();
+		
+		if(count($store_address)>0)
+		{
+			$value = array("status" => "SUCCESS", "message" => "SUCCESS", "response" => $store_address);}
+		else{
+			$value = array("status" => "FAILED", "message" => "No data found", "response" => null);
+		}
+	}
+	catch(Exception $e){
+		$value = array("status" => "FAILED", "message" => $e->getMessage(), "response" => null);
+	}
+	exit(json_encode($value));
+	}
+	 function getAllPreOrders()
+    {
+	try{	
+        $currentDate = date_create($this->input->post('currentDate'));
+        $allPreOrders = $this->db->get_where('pre_order', ['status' => 'ok'])->result_array();
+        $finalPreOrders = [];
+        
+        foreach ($allPreOrders as $order) {
+            $getDate = date_create($order['end_date']);
+            $diff = date_diff($currentDate, $getDate);
+            if ($diff->format('%R%a') >= 0) {
+                # need to show this pre order
+                $finalPreOrders[] = $order;
+            }
+        }
+        if ($finalPreOrders[0]) {
+			echo json_encode(["status" =>"SUCCESS", "message"=>"SUCCESS", "response"=> $finalPreOrders[0]]);
+        } else {
+            echo json_encode(["status" =>"FAILED", "message"=>"No data found", "response"=> $finalPreOrders[0]]);
+        }
+	}
+	catch(Exception $ex){
+		echo json_encode(["status" =>"FAILED", "message"=>$ex->getMessage() , "response"=> null]);
+	}
+    }
 	function createTimeSlots($interval, $start_time, $end_time)
 	{
 		$start = strtotime($start_time);
@@ -10944,6 +10989,7 @@ class Webservice extends CI_Controller
 
 		exit(json_encode($value));
 	}
+
 }
 
 /* End of file home.php */
