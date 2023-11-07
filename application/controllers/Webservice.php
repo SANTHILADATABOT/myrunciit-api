@@ -1297,6 +1297,7 @@ class Webservice extends CI_Controller
 			$this->load->view('front/user/message_view', $page_data);
 		}
 		if ($para1 == "address_view") {
+			try{
 			$addresslist = $this->db->get_where('shipping_address', array('unique_id' => $para2))->result_array();
 			foreach ($addresslist as $al) {
 				$res['unique_id'] = $al['unique_id'];
@@ -1307,7 +1308,8 @@ class Webservice extends CI_Controller
 				//	$res['country_code']=$al['country_code'];
 				$res['mobile'] = $al['mobile'];
 				$res['zip_code'] = $al['zip_code'];
-				$res['state'] = $this->db->get_where('state', array('state_id' => $al['state']))->row()->name;
+				// $res['state'] = $this->db->get_where('state', array('state_id' => $al['state']))->row()->name;
+				$res['state'] =  $al['state'];
 				//	$res['instruction']=$al['instruction'];
 				$res['email'] = $al['email'];
 				$res['city'] = $al['city'];
@@ -1315,17 +1317,32 @@ class Webservice extends CI_Controller
 				//	$res['delivery_method']=$al['delivery_method'];
 				$response[] = $res;
 			}
+			if(count($res)==0){
+				exit(json_encode(array(
+					"status" => "FAILED",
+					"message" => "Invalid Address Details",
+					"response" => null
+				)));
+			}
 			$value = array(
 				"status" => "SUCCESS",
-				"Message" => "SUCCESS",
-				"Response" => $response
+				"message" => "SUCCESS",
+				"response" => $response
 			);
 			exit(json_encode($value));
 		}
+		catch(Exception $e){
+			exit(json_encode(array(
+				"status" => "FAILED",
+				"message" => $e->getMessage(),
+				"response" => $e
+			)));
+		}
+		}
 		if ($para1 == "add_address") {
 
+			try{
 			$datas = json_decode($this->input->raw_input_stream, 1);
-			//print_r($datas); exit;
 			$data['user_id'] = $datas['userid'];
 			$query = $this->db->get_where('shipping_address', array(
 				'user_id' => $data['userid'], 'set_default' => "1"
@@ -1343,22 +1360,44 @@ class Webservice extends CI_Controller
 			$data['city'] = $datas['city'];
 			//	$data['district']=$datas['district'];
 			$data['zip_code'] = $datas['zip_code'];
-			$data['state '] = $datas['state'];
+			$data['state'] = $datas['state'];
 			$data['country'] = $datas['country'];
 			//	$data['instruction']=$datas['instruct'];
 			$unicid = 'SHIP' . substr(time(), 4) . rand(100000, 999999);
 			$data['unique_id'] = $unicid;
+
+			$data['latitude'] = $datas['latitude'];
+			$data['longitude'] = $datas['longitude'];
+
+			$count = $this->db->get_where('shipping_address',['user_id'=> $data['user_id'],'name'=> $data['name'], 'mobile'=> $data['mobile'],'email'=> $data['email'],'address'=> $data['address'],'address1'=> $data['address1'],'city'=> $data['city'],'zip_code'=> $data['zip_code'], 'state'=> $data['state'],'country'=> $data['country'],'latitude'=> $data['latitude'],'longitude'=> $data['longitude']])->result_array();
+		
+			if(count($count)>=1){
+				$value = array(
+					"status" => "FAILED",
+					"Message" => "Address Already Exist",
+					"Response" => $count[0]['unique_id'],
+				);
+				exit(json_encode($value));
+			}
+
 			$this->db->insert('shipping_address', $data);
 			//echo $this->db->last_query();
 			$value = array(
 				"status" => "SUCCESS",
-				"Message" => "SUCCESS",
-				"Response" => $unicid
+				"message" => "Address stored Successfully",
+				"response" => $unicid
 			);
-			//	echo $this->db->last_query();
 			exit(json_encode($value));
+		}catch(Exception $ex){
+			exit(json_encode( array(
+				"status" => "FAILED",
+				"message" => $e->getMessage(),
+				"response" => $e
+			)));
+		}
 		}
 		if ($para1 == "edit_address") {
+			try{
 			$datas = json_decode($this->input->raw_input_stream, 1);
 			$data['user_id'] = $datas['userid'];
 			$data['name'] = $datas['name'];
@@ -1379,29 +1418,43 @@ class Webservice extends CI_Controller
 			//echo $this->db->last_query();
 			$value = array(
 				"status" => "SUCCESS",
-				"Message" => "SUCCESS"
+				"message" => "Address Updated Successfully..!",
+				"response" => $datas['unique_id']
 			);
 			exit(json_encode($value));
 		}
+		catch(Exception $e){
+			exit(json_encode(array(
+				"status" => "FAILED",
+				"message" => $e->getMessage(),
+				"response" => $e
+			)));
+		}
+		}
 		if ($para1 == 'delete_address') {
+			try{
 			$this->db->where('unique_id', $para2);
 			$this->db->delete('shipping_address');
 			$value = array(
 				"status" => "SUCCESS",
-				"Message" => "SUCCESS"
+				"message" => "Address Removed Successfully"
 			);
 			exit(json_encode($value));
+		}catch(Exception $e){
+			exit(json_encode(["status"=>"FAILED","message"=>$e->getMessage(),"response"=>$e]));
 		}
-		if ($para2 == "address_list") {
+		}
+		if ($para1 == "address_list") {
+			try{
 			$addresslist = $this->db->get_where('shipping_address', array('user_id' => $para3))->result_array();
-			echo $this->db->last_query;
 			foreach ($addresslist as $al) {
 				$res['unique_id'] = $al['unique_id'];
 				$res['name'] = $al['name'];
 				$res['address'] = $al['address'];
 				$res['address1'] = $al['address1'];
 				$res['country'] = $al['country'];
-				$res['state'] = $this->db->get_where('state', array('state_id' => $al['state']))->row()->name;
+				// $res['state'] = $this->db->get_where('state', array('state_id' => $al['state']))->row()->name;
+				$res['state'] = $al['state'];
 				//	$res['country_code']=$al['country_code'];
 				$res['mobile'] = $al['mobile'];
 				$res['zip_code'] = $al['zip_code'];
@@ -1413,11 +1466,18 @@ class Webservice extends CI_Controller
 			}
 			$value = array(
 				"status" => "SUCCESS",
-				"Message" => "SUCCESS",
-				"Response" => $response
+				"message" => "SUCCESS",
+				"response" => $response
 			);
 			exit(json_encode($value));
 		}
+		catch(Exception $e){
+			exit(json_encode(["status"=>"FAILED","message"=>$e->getMessage(),"response"=>$e]));
+		}
+		}
+		
+
+
 		if ($para1 == "returnproducts_list") {
 			$this->db->where('user_id', $para2);
 			$page_data = $this->db->get('gr_return_order')->result_array();
