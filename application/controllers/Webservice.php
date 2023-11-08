@@ -9208,6 +9208,36 @@ class Webservice extends CI_Controller
 		$this->load->view('front/index.php', $page_data);
 	}
 
+	/*returns required no of blogs. if want all, then post limit as 'all' */
+	function blogs(){
+		try{
+		$data=json_decode($this->input->raw_input_stream, 1);
+		if($data['limit'] !=="all" && $data['limit']!=0)
+		{
+			$this->db->limit($data['limit']);
+		}
+		else if($data['limit'] !=="all" && $data['limit'] == 0 ){
+			echo json_encode(['status'=>"SUCCESS", 'message'=>"SUCCESS", "response"=>null]);
+			exit();
+		}
+		$this->db->order_by("blog_id", "asc");
+		$blogs=$this->db->get('blog')->result_array();
+		$result=[];
+		foreach($blogs as $blog){
+				// $blog['blog_category']			
+				$blog_category= $this->db->get_where('blog_category',array("blog_category_id" => $blog
+				['blog_category']))->result_array();
+				$result[]=array_merge($blog, ['blog_category_name' =>$blog_category[0]['name']]);
+		}
+
+		echo json_encode(['status'=>"SUCCESS", 'message'=>"SUCCESS", "response"=>$result]);
+	}
+	catch(Exception $ex){
+		echo json_encode(['status'=>"FAILED", 'message'=>$ex->getMessage(), "response"=>$ex]);
+		exit();
+	}
+	}
+
 	function others_product($para1 = "")
 	{
 
@@ -11086,10 +11116,6 @@ class Webservice extends CI_Controller
 			$loc=implode(',',[$sa['address'],$sa['city'],$sa['state'],$sa['country'],$sa['zip_code']]);
 			$lat=$sa['latitude'];
 			$lng=$sa['longitude'];
-
-			// $loc=$this->input->post('loc');
-			// $lat=$this->input->post('lat');
-			// $lng=$this->input->post('lng');
 			$delivery_estimation=0;
 			$result=[];
 			if(($loc!="") && ($lat!="") && ($lng!=""))
