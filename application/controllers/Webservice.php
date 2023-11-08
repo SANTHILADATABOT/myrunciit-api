@@ -11076,6 +11076,92 @@ class Webservice extends CI_Controller
 		exit(json_encode($value));
 	}
 
+	function getQuotation_charge()
+		{//$$$
+			$data=json_decode($this->input->raw_input_stream, 1);
+			$unique_id = $data['unique_id'];
+			
+			//selected_address
+			$sa = $this->db->get_where('shipping_address', array('unique_id' => $unique_id))->result_array();
+			$loc=implode(',',[$sa['address'],$sa['city'],$sa['state'],$sa['country'],$sa['zip_code']]);
+			$lat=$sa['latitude'];
+			$lng=$sa['longitude'];
+
+			// $loc=$this->input->post('loc');
+			// $lat=$this->input->post('lat');
+			// $lng=$this->input->post('lng');
+			$delivery_estimation=0;
+			$result=[];
+			if(($loc!="") && ($lat!="") && ($lng!=""))
+			{
+				$stops='{"coordinates": {"lat": "'.$lat.'","lng": "'.$lng.'"},"address": "'.$loc.'"}';
+				$carted   = $this->cart->contents();
+				$store_id=[];
+				foreach ($carted as $ct) {
+					$store_id0 = $this->db->get_where('product', array('product_id' => $ct['id']))->row()->store_id;
+					if(!in_array($store_id0,$store_id)){$store_id[]=$store_id0;}
+				}
+				foreach ($store_id as $store_id1) {
+					$store=null;
+					$lalamove_store0=($this->db->get_where('vendor', array('vendor_id' => $store_id1))->result_array())[0];
+					if(($lalamove_store0['latitude']!="") && ($lalamove_store0['longitude']!="") && ($lalamove_store0['address1']!=""))
+					{$store='{"coordinates": {"lat": "'.$lalamove_store0['latitude'].'","lng": "'.$lalamove_store0['longitude'].'"},"address": "'.($lalamove_store0['address1'] . ',' . $lalamove_store0['city'] . ',' . $lalamove_store0['state'] . ',' . $lalamove_store0['country'] . ',' . $lalamove_store0['zip']).'"}';}
+					if(($store!=null) && ($stops!=null)){
+						$time = (time() * 1000);
+						$method = 'POST';
+						$region = 'MY';
+						$body = '{"data" : {
+							"serviceType": "MOTORCYCLE",
+							"specialRequests":, [],
+							"language": "en_MY",
+							"stops": ['.$store.','.$stops.']
+						}}';
+						$rawSignature = "{$time}\r\n{$method}\r\n{$this->lalamove_path}\r\n\r\n{$body}";
+						$signature = hash_hmac("sha256", $rawSignature, $this->lalamove_secret);
+						$startTime = microtime(true);
+						$token = $this->lalamove_apiKey.':'.$time.':'.$signature;
+						$curl = curl_init();
+						curl_setopt_array($curl, array(
+							CURLOPT_URL => $this->lalamove_url.$this->lalamove_path,
+							CURLOPT_RETURNTRANSFER => true,
+							CURLOPT_ENCODING => '',
+							CURLOPT_MAXREDIRS => 10,
+							CURLOPT_TIMEOUT => 3,
+							CURLOPT_FOLLOWLOCATION => true,
+							CURLOPT_HEADER => false,
+							CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+							CURLOPT_CUSTOMREQUEST => $method,
+							CURLOPT_POSTFIELDS => $body,
+							CURLOPT_HTTPHEADER => array(
+								"Content-type: application/json; charset=utf-8",
+								"Authorization: hmac ".$token,
+								"Accept: application/json",
+								"Market: ".$region
+							),
+						));
+						$response = curl_exec($curl);
+						$httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+						curl_close($curl);
+						$response0 = json_decode($response,true);
+						if(!isset($response0['errors'])){
+							if($response0['data']['priceBreakdown']['total']!="")
+						   {
+								$delivery_estimation+=floatval($response0['data']['priceBreakdown']['total']);
+								$result[$store_id1]=$response;
+							}
+						}
+						else{
+							echo json_encode(["status"=>"FAILED","message"=>"Unable to fetch data","response"=>$response0['errors']]);
+						}
+					}
+				}
+			}
+			
+			$resp['result']=json_encode($result);
+			$resp['value']=$delivery_estimation;
+			$resp['display']=currency().number_format($delivery_estimation,2);
+			echo json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$resp]);
+		}
 }
 
 /* End of file home.php */
