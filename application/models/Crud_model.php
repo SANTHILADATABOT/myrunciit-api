@@ -493,6 +493,12 @@ $this->session->set_userdata('delivery_final_value',$this->getQuotationResponse-
         $name = url_title($this->crud_model->get_type_name_by_id('blog', $blog_id, 'title'));
         return base_url() . 'index.php/home/blog_view/' . $blog_id . '/' . $name;
     }
+    //GET PRODUCT LINK
+    function blog_link_ws($blog_id)
+    {
+        $name = url_title($this->crud_model->get_type_name_by_id('blog', $blog_id, 'title'));
+        return base_url() . 'index.php/webservice/blog_view/' . $blog_id . '/' . $name;
+    }
 
     //GET PRODUCT LINK
     function vendor_link($vendor_id)

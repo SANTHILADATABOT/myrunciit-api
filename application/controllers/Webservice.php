@@ -5096,81 +5096,196 @@ class Webservice extends CI_Controller
 			echo json_encode($this->cart->contents());
 		}
 
+		// if ($para1 == 'calcs') {
+		// 	try{
+		// 	$total = $this->cart->total();
+
+		// 	if ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'product_wise') {
+		// 		$shipping = $this->crud_model->cart_total_it('shipping');
+		// 	} elseif ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'fixed') {
+		// 		$shipping = $this->crud_model->get_type_name_by_id('business_settings', '2', 'value');
+		// 	}
+
+		// 	$tax   = $this->crud_model->cart_total_it('tax');
+
+		// 	$grand = $total + $shipping + $tax;
+
+		// 	if ($para2 == 'full') {
+
+		// 		$ship  = $shipping;
+
+		// 		$count = count($this->cart->contents());
+
+		// 		if ($total == '') {
+
+		// 			$total = 0;
+		// 		}
+
+		// 		if ($ship == '') {
+
+		// 			$ship = 0;
+		// 		}
+
+		// 		if ($tax == '') {
+
+		// 			$tax = 0;
+		// 		}
+
+		// 		if ($grand == '') {
+
+		// 			$grand = 0;
+		// 		}
+
+		// 		$total = currency($total);
+
+		// 		$ship  = currency($ship);
+
+		// 		$tax   = currency($tax);
+
+		// 		$grand = currency($grand);
+
+		// 		$return=array('total'=>$total,"ship"=>$ship,"tax"=>$tax,"gaurd"=>$grand,"count"=>$count);
+		// 		echo json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$return]);
+		// 	}
+
+		// 	if ($para2 == 'prices') {
+
+		// 		$carted = $this->cart->contents();
+
+		// 		$return = array();
+
+		// 		foreach ($carted as $row) {
+
+		// 			$return[] = array('id' => $row['rowid'], 'price' => currency($row['price']), 'subtotal' => currency($row['subtotal']));
+		// 		}
+		// 		echo json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$return]);
+		// 	}
+		// }
 		if ($para1 == 'calcs') {
+			exit("nnsanavkln");
+			try{
+            //$total = $this->cart->total();
+            $total = 0;$tax=0;
+            $carted = $this->cart->contents();
+            foreach ($carted as $items){
+                if($items['subtotal']!='')
+                {$total+=floatval($items['subtotal']);}
+                $tax_1=$this->crud_model->get_product_tax($items['id']);
+                if(($tax_1!='') && ($items['qty']!=''))
+                {$tax+=(floatval($tax_1) * floatval($items['qty']));}
+            }
 
-			$total = $this->cart->total();
 
-			if ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'product_wise') {
+            /*  if ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'product_wise') {
+                $shipping = $this->crud_model->cart_total_it('shipping');
+            } elseif ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'fixed') {
+                $shipping = $this->crud_model->get_type_name_by_id('business_settings', '2', 'value');
+            } */
+            //  if($this->db->get_where('business_settings', array('type'=>'delivery'))->row()->status=="ok"){ 
+            $shipping = 0;
+            if ($this->session->userdata('user_zips') != "") {
+                //  echo "pk".$this->session->userdata('pickup');
+                $free_deliv = $this->db->get_where('business_settings', array('type' => 'free_delivery'))->row()->value;
+                if ($total < $free_deliv) {
 
-				$shipping = $this->crud_model->cart_total_it('shipping');
-			} elseif ($this->crud_model->get_type_name_by_id('business_settings', '3', 'value') == 'fixed') {
+                    $shipping_1 = $this->db->get_where('business_settings', array('type' => 'delivery_fee'))->row()->value;
+                    if($shipping_1!='')
+                    {$shipping=floatval($shipping_1);}
+                    else{$shipping = 0;}
+                } else {
+                    $shipping = 0;
+                }
+            }
+            //}
+            //$tax   = $this->crud_model->cart_total_it('tax');
 
-				$shipping = $this->crud_model->get_type_name_by_id('business_settings', '2', 'value');
-			}
 
-			$tax   = $this->crud_model->cart_total_it('tax');
+            $code = $this->input->get('code');
+            $coupon = $this->db->get_where('coupon',array('code'=>$code));
+            $couponData = $coupon->result_array();
+            foreach($couponData as $row){
+                $spec = json_decode($row['spec'],true);
+                // echo "hii".implode(', ',$spec)."<br>";
+            }
+            $type = $spec['discount_type'];
+            $value = $spec['discount_value'];
+            ///////////////////////////////////////
 
-			$grand = $total + $shipping + $tax;
+            // $totalDiscount=$this->cart->total_discount();
+            $grand = $total + $shipping + $tax;
+            if($type == 'amount'){
+                $totalDiscount = $grand - $value;
+                $val1 = number_format($value,2);
+            }
+            else if($type == 'percent'){
+                $val1 = number_format(($grand * $value/100),2);
+                $totalDiscount = $grand - $val1;
+            }
+            if ($para2 == 'full') {
+                
+                $ship  = $shipping;
+                $count = count($this->cart->contents());
+                // print_r($this->cart->contents());
 
-			if ($para2 == 'full') {
+                /*if ($total == '') {
+                    $total = 0;
+                }*/
+                if ($ship == '') {
+                    $ship = 0;
+                }
+                /*if ($tax == '') {
+                    $tax = 0;
+                }
+                if ($grand == '') {
+                    $grand = 0;
+                }*/
+                if ($this->session->userdata('pickup') != "") {
+                    $pickup = 0;
+                } else {
+                    $pickup = 1;
+                }
 
-				$ship  = $shipping;
+                $total = currency().number_format($total,2);
+                $ship  = currency().number_format($ship,2);
+                $tax   = currency().number_format($tax,2);
+                if($totalDiscount){
+                    $grand = $totalDiscount;
+                }
+                $grand = currency().number_format($grand,2);
+                $free_delivery = $this->db->get_where('business_settings', array('type' => 'free_delivery'))->row()->value;
+                //echo "delx".$free_delivery;
+                //$totalDiscount = $this->cart->total_discount() > 0 ? currency($this->cart->total_discount()) : "RM";
+                $totalDiscount=$this->cart->total_discount();
+                $totalDiscount=currency().number_format((($totalDiscount!='')?floatval($totalDiscount):0),2);
+                // echo $total . '-' . $ship . '-' . $tax . '-' . $grand . '-' . $count . '-' . $pickup . '-' . $free_delivery . '-' . $totalDiscount . '-' .$value. '-' .$val1;
+				$result= array("total"=>$total ,"ship"=>$ship ,"tax"=>$tax ,"grand"=>$grand ,"count"=>$count ,"pickup"=>$pickup ,"free_delivery"=>$free_delivery ,"totalDiscount"=>$totalDiscount ,"value"=>$value,"val1"=>$val1);
+				exit(json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$result]));
+            }
 
-				$count = count($this->cart->contents());
+            if ($para2 == 'prices') {
+                $carted = $this->cart->contents();
+                $return = array();
+                foreach ($carted as $row) {
+                    if ($row['subscribamt'] > 0) {
+                        $row['subtotal'] = $row['subtotal'] * $row['subscribamt'];
+                    }
 
-				if ($total == '') {
-
-					$total = 0;
-				}
-
-				if ($ship == '') {
-
-					$ship = 0;
-				}
-
-				if ($tax == '') {
-
-					$tax = 0;
-				}
-
-				if ($grand == '') {
-
-					$grand = 0;
-				}
-
-				$total = currency($total);
-
-				$ship  = currency($ship);
-
-				$tax   = currency($tax);
-
-				$grand = currency($grand);
-
-				echo $total . '-' . $ship . '-' . $tax . '-' . $grand . '-' . $count;
-			}
-
-			if ($para2 == 'prices') {
-
-				$carted = $this->cart->contents();
-
-				$return = array();
-
-				foreach ($carted as $row) {
-
-					$return[] = array('id' => $row['rowid'], 'price' => currency($row['price']), 'subtotal' => currency($row['subtotal']));
-				}
-
-				echo json_encode($return);
-			}
+                    $return[] = array('id' => $row['rowid'], 'price' => currency($row['price']), 'subtotal' => currency($row['subtotal']));
+                }
+				exit(json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$result]));
+                // echo json_encode($return);
+            }
+        }
+		catch(Exception $e){
+			echo json_encode(["status"=>"FAILED","message"=>$e->getMessage(),"response"=>$e]);
 		}
+	}
 	}
 
 	/* FUNCTION: Loads Cart Checkout Page*/
 
 	function cart_checkout($para1 = "")
-
 	{
-
 		$carted = $this->cart->contents();
 
 		if (count($carted) <= 0) {
@@ -9184,8 +9299,8 @@ class Webservice extends CI_Controller
 	/* FUNCTION: Loads Contact Page */
 
 	function blog_view($para1 = "")
-
 	{
+		try{
 
 		$page_data['blog']  = $this->db->get_where('blog', array('blog_id' => $para1))->result_array();
 
@@ -9199,13 +9314,37 @@ class Webservice extends CI_Controller
 
 		));
 
-		$page_data['page_name']  = 'blog/blog_view';
+		// $page_data['page_name']  = 'blog/blog_view';
 
-		$page_data['asset_page']  = 'blog_view';
+		// $page_data['asset_page']  = 'blog_view';
 
-		$page_data['page_title']  = $this->db->get_where('blog', array('blog_id' => $para1))->row()->title;
+		// $page_data['page_title']  = $this->db->get_where('blog', array('blog_id' => $para1))->row()->title;
+		$blog = $this->db->get_where('blog', array('blog_id' => $para1))->result_array();
+		if(count($blog) >0)
+		{		
+			
+		$blog_category_name= $this->db->get_where('blog_category', array('blog_category_id' => $blog[0]['blog_category']))->result_array();
 
-		$this->load->view('front/index.php', $page_data);
+		if(!file_exists('uploads/blog_image/blog_'.$blog['blog_id'].'.jpg')){
+			$blog_img_src = base_url()."uploads/blog_image/default.png";
+		}
+		else{
+			$blog_img_src = base_url().'uploads/blog_image/blog_'.$blog['blog_id'].'.jpg';
+		}
+			$blog_link = $this->crud_model->blog_link_ws($para1);
+			$result = array_merge($blog,["blog_category_name"=>$blog_category_name, "image_src"=> $blog_img_src, 'link'=>$blog_link]);
+			exit(json_encode(["status"=> "SUCCESS", "message"=>"SUCCESS", "response"=> $result]));
+		}
+		else{
+			exit(json_encode(["status"=> "FAILED", "message"=>"Blog Not found", "response"=> null]));
+		}
+		
+	}
+	catch(Exception $e){
+		exit(json_encode(['status'=>"FAILED", 'message'=>$ex->getMessage(), "response"=>$ex]));
+	}
+
+		// $this->load->view('front/index.php', $page_data);
 	}
 
 	/*returns required no of blogs. if want all, then post limit as 'all' */
@@ -9224,10 +9363,16 @@ class Webservice extends CI_Controller
 		$blogs=$this->db->get('blog')->result_array();
 		$result=[];
 		foreach($blogs as $blog){
-				// $blog['blog_category']			
+			if(!file_exists('uploads/blog_image/blog_'.$blog['blog_id'].'.jpg')){
+				$blog_img_src = base_url()."uploads/blog_image/default.png";
+			}
+			else{
+				$blog_img_src = base_url().'uploads/blog_image/blog_'.$blog['blog_id'].'.jpg';
+			}
+				$blog_link = $this->crud_model->blog_link_ws($blog['blog_id']);
 				$blog_category= $this->db->get_where('blog_category',array("blog_category_id" => $blog
 				['blog_category']))->result_array();
-				$result[]=array_merge($blog, ['blog_category_name' =>$blog_category[0]['name']]);
+				$result[]=array_merge($blog, ['blog_category_name' =>$blog_category[0]['name'], 'image_src'=> $blog_img_src,'link'=>$blog_link]);
 		}
 
 		echo json_encode(['status'=>"SUCCESS", 'message'=>"SUCCESS", "response"=>$result]);
