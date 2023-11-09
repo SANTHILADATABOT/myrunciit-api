@@ -5162,7 +5162,7 @@ class Webservice extends CI_Controller
 		// 	}
 		// }
 		if ($para1 == 'calcs') {
-			exit("nnsanavkln");
+			
 			try{
             //$total = $this->cart->total();
             $total = 0;$tax=0;
@@ -5258,11 +5258,12 @@ class Webservice extends CI_Controller
                 $totalDiscount=$this->cart->total_discount();
                 $totalDiscount=currency().number_format((($totalDiscount!='')?floatval($totalDiscount):0),2);
                 // echo $total . '-' . $ship . '-' . $tax . '-' . $grand . '-' . $count . '-' . $pickup . '-' . $free_delivery . '-' . $totalDiscount . '-' .$value. '-' .$val1;
-				$result= array("total"=>$total ,"ship"=>$ship ,"tax"=>$tax ,"grand"=>$grand ,"count"=>$count ,"pickup"=>$pickup ,"free_delivery"=>$free_delivery ,"totalDiscount"=>$totalDiscount ,"value"=>$value,"val1"=>$val1);
+				$result= array("total"=>$total ,"ship"=>$ship ,"tax"=>$tax ,"grand"=>$grand ,"count"=>$count ,"pickup"=>$pickup ,"free_delivery"=>$free_delivery ,"totalDiscount"=>$totalDiscount ,"discount_value"=>$value,"discounted_amount"=>$val1);
 				exit(json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$result]));
             }
 
             if ($para2 == 'prices') {
+				try{
                 $carted = $this->cart->contents();
                 $return = array();
                 foreach ($carted as $row) {
@@ -5273,6 +5274,9 @@ class Webservice extends CI_Controller
                     $return[] = array('id' => $row['rowid'], 'price' => currency($row['price']), 'subtotal' => currency($row['subtotal']));
                 }
 				exit(json_encode(["status"=>"SUCCESS","message"=>"SUCCESS","response"=>$result]));
+			}catch(Exception $e){
+				exit(json_encode(["status"=>"FAILED","message"=>$e->getMessage(),"response"=>$e]));
+			}
                 // echo json_encode($return);
             }
         }
